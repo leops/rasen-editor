@@ -1,0 +1,51 @@
+{
+    "parser": "babel-eslint",
+    "extends": "airbnb",
+    "env": {
+        "browser": true,
+        "mocha": true,
+        "node": true
+    },
+    "rules": {
+        "linebreak-style": ["error", "windows"],
+        "indent": ["error", 4, {
+            "SwitchCase": 1
+        }],
+        "arrow-parens": ["off"],
+        "consistent-return": "off",
+        "comma-dangle": "off",
+        "generator-star-spacing": "off",
+        "no-use-before-define": "off",
+
+        "flowtype-errors/show-errors": 2,
+
+        "react/jsx-first-prop-new-line": ["off"],
+        "react/jsx-closing-bracket-location": ["off"],
+        "react/jsx-indent": ["error", 4],
+        "react/jsx-indent-props": ["error", 4],
+        "react/jsx-filename-extension": ["error", {
+            "extensions": [".js", ".jsx"]
+        }],
+
+        "promise/param-names": 2,
+        "promise/always-return": 2,
+        "promise/catch-or-return": 2,
+        "promise/no-native": 0
+  },
+    "plugins": [
+        "flowtype-errors",
+        "import",
+        "promise",
+        "react"
+    ],
+    "settings": {
+        "import/resolver": {
+            "webpack": {
+                "config": "webpack.config.eslint.js"
+            }
+        },
+        "import/core-modules": [
+            "electron"
+        ]
+    }
+}

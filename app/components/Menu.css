@@ -1,0 +1,31 @@
+.menu {
+    position: absolute;
+
+    margin: 0;
+    padding: 0;
+    border-radius: 4px;
+
+    color: white;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 4px 6px 8px rgba(0, 0, 0, 0.47);
+}
+
+.menu summary {
+    padding: 8px 16px;
+}
+
+.submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.submenu li {
+    padding: 8px 16px 8px 32px;
+}
+
+.submenu li:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background-color: white;
+}

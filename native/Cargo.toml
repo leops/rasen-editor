@@ -1,0 +1,15 @@
+[package]
+name = "rasen-bridge"
+version = "0.1.0"
+authors = ["Léo-Paul COUTURIER <root@leops.me>"]
+
+[lib]
+name = "rasen"
+crate-type = ["dylib"]
+
+[dependencies]
+serde = "0.8"
+serde_json = "0.8"
+rspirv = "0.1"
+spirv-utils = { git = "https://github.com/leops/spirv-utils.git", rev = "ef68f9c" }
+rasen = { git = "https://github.com/leops/rasen.git", rev = "6dbe35b" }
