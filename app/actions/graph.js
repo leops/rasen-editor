@@ -15,8 +15,13 @@ export const FILE_OPEN = 'FILE_OPEN';
 export const FILE_SAVE = 'FILE_SAVE';
 export const FILE_SAVE_AS = 'FILE_SAVE_AS';
 
-export const UNDO_EDIT = 'UNDO_EDIT';
-export const REDO_EDIT = 'REDO_EDIT';
+export const EDIT_UNDO = 'EDIT_UNDO';
+export const EDIT_REDO = 'EDIT_REDO';
+export const EDIT_COPY = 'EDIT_COPY';
+export const EDIT_CUT = 'EDIT_CUT';
+export const EDIT_PASTE = 'EDIT_PASTE';
+export const EDIT_DELETE = 'EDIT_DELETE';
+export const EDIT_SELECT_ALL = 'EDIT_SELECT_ALL';
 
 type Dispatcher = (action: Object) => void;
 type StateGetter = () => Object;
@@ -119,12 +124,42 @@ export function saveAs() {
 
 export function undo() {
     return {
-        type: UNDO_EDIT
+        type: EDIT_UNDO
     };
 }
 
 export function redo() {
     return {
-        type: REDO_EDIT
+        type: EDIT_REDO
+    };
+}
+
+export function copy() {
+    return {
+        type: EDIT_COPY
+    };
+}
+
+export function cut() {
+    return {
+        type: EDIT_CUT
+    };
+}
+
+export function paste() {
+    return {
+        type: EDIT_PASTE
+    };
+}
+
+export function deleteSelection() {
+    return {
+        type: EDIT_DELETE
+    };
+}
+
+export function selectAll() {
+    return {
+        type: EDIT_SELECT_ALL
     };
 }

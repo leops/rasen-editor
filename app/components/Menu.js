@@ -7,6 +7,8 @@ import {
 import {
     Pin
 } from 'react-graph-editor';
+
+// eslint-disable-next-line no-duplicate-imports
 import type {
     MenuState
 } from 'react-graph-editor';
@@ -123,18 +125,18 @@ export default ({ menu, addNode }: Props) => (
                 binaryNode('Cross')
             ]
         }].map(({ title, types }) => (
-            <details>
+            <details key={title}>
                 <summary>{title}</summary>
-                <ul className={styles.submenu}>
+                <div className={styles.submenu}>
                     {types.map(template => (
-                        <li key={template.title} onClick={evt => {
+                        <button key={template.title} onClick={evt => {
                             evt.preventDefault();
                             evt.stopPropagation();
 
                             addNode(template);
-                        }}>{template.title}</li>
+                        }}>{template.title}</button>
                     ))}
-                </ul>
+                </div>
             </details>
         ))}
     </div>

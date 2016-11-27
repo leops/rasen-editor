@@ -1,7 +1,7 @@
 {
   "name": "rasen-editor",
   "productName": "RasenEditor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Electron-based graph editor for the Rasen SPIR-V generator",
   "main": "main.js",
   "scripts": {
@@ -117,6 +117,7 @@
     "eslint-formatter-pretty": "^1.1.0",
     "eslint-import-resolver-webpack": "^0.7.0",
     "eslint-loader": "^1.6.0",
+    "eslint-plugin-flowtype": "^2.28.2",
     "eslint-plugin-flowtype-errors": "^1.5.0",
     "eslint-plugin-import": "^2.1.0",
     "eslint-plugin-jsx-a11y": "^2.2.3",
@@ -153,7 +154,7 @@
     "immutable": "^3.8.1",
     "react": "^15.3.2",
     "react-dom": "^15.3.2",
-    "react-graph-editor": "^0.1.0",
+    "react-graph-editor": "^0.2.0",
     "react-redux": "^4.4.5",
     "react-router": "^3.0.0",
     "react-router-redux": "^4.0.6",

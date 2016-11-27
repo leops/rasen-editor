@@ -4,6 +4,8 @@ import React from 'react';
 import {
     Graph
 } from 'react-graph-editor';
+
+// eslint-disable-next-line no-duplicate-imports
 import type {
     GraphState
 } from 'react-graph-editor';

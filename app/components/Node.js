@@ -1,6 +1,7 @@
 // @flow
 import React from 'react';
 
+// eslint-disable-next-line no-duplicate-imports
 import type {
     Element
 } from 'react';

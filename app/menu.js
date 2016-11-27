@@ -7,24 +7,24 @@ export default [{
     filter: process.platform === 'darwin',
 
     submenu: [{
-        role: 'about'
+        role: 'about',
     }, {
-        type: 'separator'
+        type: 'separator',
     }, {
         role: 'services',
-        submenu: []
+        submenu: [],
     }, {
-        type: 'separator'
+        type: 'separator',
     }, {
-        role: 'hide'
+        role: 'hide',
     }, {
-        role: 'hideothers'
+        role: 'hideothers',
     }, {
-        role: 'unhide'
+        role: 'unhide',
     }, {
-        type: 'separator'
+        type: 'separator',
     }, {
-        role: 'quit'
+        role: 'quit',
     }]
 }, {
     label: '&File',
@@ -46,7 +46,7 @@ export default [{
             }
         }
     }, {
-        type: 'separator'
+        type: 'separator',
     }, {
         label: '&Save',
         accelerator: 'CmdOrCtrl+S',
@@ -64,9 +64,9 @@ export default [{
             }
         }
     }, {
-        type: 'separator'
+        type: 'separator',
     }, {
-        role: 'close'
+        role: 'close',
     }]
 }, {
     label: '&Edit',
@@ -88,22 +88,47 @@ export default [{
             }
         }
     }, {
-        type: 'separator'
+        type: 'separator',
     }, {
-        role: 'cut',
-        selector: 'cut:'
+        label: 'Cut',
+        accelerator: 'CommandOrControl+X',
+        click(evt, focusedWindow) {
+            if (focusedWindow) {
+                focusedWindow.webContents.send('action', 'cut');
+            }
+        }
     }, {
-        role: 'copy',
-        selector: 'copy:'
+        label: 'Copy',
+        accelerator: 'CommandOrControl+C',
+        click(evt, focusedWindow) {
+            if (focusedWindow) {
+                focusedWindow.webContents.send('action', 'copy');
+            }
+        }
     }, {
-        role: 'paste',
-        selector: 'paste:'
+        label: 'Paste',
+        accelerator: 'CommandOrControl+V',
+        click(evt, focusedWindow) {
+            if (focusedWindow) {
+                focusedWindow.webContents.send('action', 'paste');
+            }
+        }
     }, {
-        role: 'selectall',
-        selector: 'selectAll:'
+        label: 'Select All',
+        accelerator: 'CommandOrControl+A',
+        click(evt, focusedWindow) {
+            if (focusedWindow) {
+                focusedWindow.webContents.send('action', 'selectAll');
+            }
+        }
     }, {
-        role: 'delete',
-        selector: 'delete:'
+        label: 'Delete',
+        accelerator: 'Delete',
+        click(evt, focusedWindow) {
+            if (focusedWindow) {
+                focusedWindow.webContents.send('action', 'deleteSelection');
+            }
+        }
     }]
 }, {
     label: '&View',
@@ -116,7 +141,7 @@ export default [{
             }
         }
     }, {
-        role: 'togglefullscreen'
+        role: 'togglefullscreen',
     }, {
         label: 'Toggle &Developer Tools',
         accelerator: process.platform === 'darwin' ? 'Alt+Command+I' : 'Ctrl+Shift+I',
@@ -126,19 +151,19 @@ export default [{
             }
         }
     }] : [{
-        role: 'togglefullscreen'
+        role: 'togglefullscreen',
     }]
 }, {
     role: 'window',
     filter: process.platform === 'darwin',
 
     submenu: [{
-        role: 'minimize'
+        role: 'minimize',
     }, {
-        role: 'close'
+        role: 'close',
     }, {
-        type: 'separator'
+        type: 'separator',
     }, {
-        role: 'front'
+        role: 'front',
     }]
 }];

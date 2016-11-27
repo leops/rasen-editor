@@ -26,13 +26,11 @@ export default validate(merge(baseConfig, {
     },
 
     module: {
-        // preLoaders: [
-        //     {
-        //         test: /\.js$/,
-        //         loader: 'eslint-loader',
-        //         exclude: /node_modules/
-        //     }
-        // ],
+        preLoaders: [{
+            test: /\.js$/,
+            loader: 'eslint-loader',
+            exclude: /node_modules/
+        }],
         loaders: [
             {
                 test: /\.global\.css$/,

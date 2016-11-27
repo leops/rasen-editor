@@ -3,7 +3,7 @@ import {
     FILE_NEW,
     FILE_OPEN,
     FILE_SAVE,
-    FILE_SAVE_AS
+    FILE_SAVE_AS,
 } from '../actions/graph';
 
 export default function path(state: ?string = null, action: Object) {
