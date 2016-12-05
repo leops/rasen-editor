@@ -21,7 +21,7 @@ export default ({ graph, updateGraph }: Props) => (
                     .flatMap(node =>
                         node.data
                             .map((value, key) => (
-                                <label key={key} htmlFor={key}>{key}:</label>
+                                <label key={key} htmlFor={key}>{key}</label>
                             ))
                             .values()
                     )

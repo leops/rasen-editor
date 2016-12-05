@@ -5,10 +5,11 @@ import React, {
 import type {
     GraphState
 } from 'react-graph-editor';
+import leftPad from 'left-pad';
 
 import {
-    compile
-} from '../utils/rasen';
+    toAssembly,
+} from '../utils/rasen.render';
 
 import styles from './Bytecode.css';
 
@@ -25,39 +26,78 @@ export default class Bytecode extends Component {
     props: Props;
 
     render() {
-        const {
-            nodes, edges
-        } = this.props.graph.editorState;
+        const result = toAssembly(this.props.graph);
+        if (result.error) {
+            return (
+                <div className={styles.bytecode}>
+                    {result.error}
+                </div>
+            );
+        }
 
-        const payload = {
-            nodes: nodes
-                .map(({ title, data }) => ({
-                    ...data
-                        .map(prop => {
-                            try {
-                                return JSON.parse(prop);
-                            } catch (err) {
-                                return prop;
-                            }
-                        })
-                        .toObject(),
-                    title
-                }))
-                .toJS(),
-            edges: edges
-                .sort((a, b) =>
-                    a.input - b.input
-                )
-                .map(({ from, to }) => ({
-                    from, to
-                }))
-                .toJS()
-        };
+        let padding = 5;
+        while (result.bound > 10) {
+            padding += 1;
+            result.bound /= 10;
+        }
 
         return (
-            <pre className={styles.bytecode}>
-                {compile(JSON.stringify(payload))}
-            </pre>
+            <div className={styles.bytecode}>
+                {result.instructions.map((inst, key) => (
+                    <div key={key} className={inst.class === ';' && styles.comment}>
+                        {inst.result_id ? (
+                            <span>
+                                <span className={styles.id}>
+                                    {leftPad(`%${inst.result_id}`, padding - 3)}
+                                </span>
+                                =
+                            </span>
+                        ) : (
+                            <span>
+                                {new Array(inst.class === ';' ? 0 : padding).join(' ')}
+                            </span>
+                        )}
+                        <span className={styles.opcode}>{inst.class}</span>
+                        {inst.operands.map((op, i) => {
+                            switch (op.operand) {
+                                case 'Id':
+                                    return (
+                                        <span key={i} className={styles.id}>
+                                            %{op.value}
+                                        </span>
+                                    );
+                                case 'Type':
+                                    return (
+                                        <span key={i} className={styles.type}>
+                                            %{op.value}
+                                        </span>
+                                    );
+                                case 'String':
+                                    return (
+                                        <span key={i} className={styles.string}>
+                                            &quot;{op.value}&quot;
+                                        </span>
+                                    );
+                                case 'Int':
+                                case 'Float':
+                                    return (
+                                        <span key={i} className={styles.number}>
+                                            {op.value}
+                                        </span>
+                                    );
+                                case 'ExtInst':
+                                    return (
+                                        <span key={i} className={styles.function}>
+                                            {op.value}
+                                        </span>
+                                    );
+                                default:
+                                    return <span key={i}>{op.value}</span>;
+                            }
+                        })}
+                    </div>
+                ))}
+            </div>
         );
     }
 }

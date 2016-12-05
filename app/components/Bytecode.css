@@ -1,13 +1,40 @@
 .bytecode {
+    white-space: pre;
+    user-select: initial;
+
+    font-family: "Lucida Console", Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    line-height: 1.7;
+    font-size: 13px;
+
     height: 100%;
     width: 100%;
     margin: 0;
-    padding: 16px;
+    padding: 1em;
 
-    font-size: 1.2em;
     overflow-x: hidden;
     overflow-y: auto;
+}
 
-    background: rgba(0, 0, 0, 0.78);
-    color: rgba(255, 255, 255, 0.8);
+.bytecode span::after {
+    content: ' ';
+}
+
+.comment {
+    color: #989898;
+}
+
+.id {
+    color: #00A0E9;
+}
+
+.number, .function {
+    color: #E01515;
+}
+
+.string {
+    color: #60BE29;
+}
+
+.type {
+    color: #f9a825;
 }

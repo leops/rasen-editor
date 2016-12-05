@@ -1,42 +1,192 @@
+use std::fmt;
 use std::mem::transmute;
 
-use rasen::ShaderType;
 use rasen::Module as Mod;
+use rasen::glsl::*;
 
 use spirv_utils::instruction::Instruction as Inst;
 use spirv_utils::instruction::Decoration as Deco;
-use spirv_utils::desc;
+use spirv_utils::desc::{
+    Id, ResultId,
+    TypeId, ValueId,
+};
 
-use rspirv::mr::*;
-use rspirv::spirv::*;
-use rspirv::binary::Disassemble;
-use rspirv::grammar::InstructionTable;
+use serde_json::{
+    to_string, to_value,
+    Value, Map
+};
 
-fn new_instruction(opcode: Op, result_id: Option<u32>, result_type: Option<u32>, operands: Vec<Operand>) -> Instruction {
-    Instruction {
-        class: InstructionTable::lookup_opcode(
-            opcode as u16
-        ).expect("opcode not found"),
-        result_id: result_id,
-        result_type: result_type,
-        operands: operands
+enum Operand {
+    Text(String),
+    Id(u32),
+    Type(u32),
+    LitString(String),
+    LitInt(u32),
+    LitFloat(f32),
+    ExtInst(GLSL),
+}
+
+macro_rules! insert_operand {
+    ( $res:ident, $name:expr, $value:expr ) => {
+        $res.insert(String::from("operand"), to_value($name));
+        $res.insert(String::from("value"), to_value($value));
     }
 }
 
-fn convert_instruction(inst: &Inst) -> Result<Instruction, String> {
-    Ok(match inst {
-        &Inst::Decorate { target, ref decoration } => new_instruction(
-            Op::Decorate,
-            None, None,
+fn new_operand(operand: Operand) -> Value {
+    let mut res = Map::new();
+
+    match operand {
+        Operand::Text(val) => {
+            insert_operand!(res, "Text", val);
+        },
+        Operand::Id(val) => {
+            insert_operand!(res, "Id", val);
+        },
+        Operand::Type(val) => {
+            insert_operand!(res, "Type", val);
+        },
+        Operand::LitString(val) => {
+            insert_operand!(res, "String", val);
+        },
+        Operand::LitInt(val) => {
+            insert_operand!(res, "Int", val);
+        },
+        Operand::LitFloat(val) => {
+            insert_operand!(res, "Float", val);
+        },
+        Operand::ExtInst(val) => {
+            insert_operand!(res, "ExtInst", format!("{:?}", val));
+        }
+    }
+
+    Value::Object(res)
+}
+
+trait AsOperand {
+    fn as_op(&self) -> Operand;
+}
+
+impl<T: fmt::Debug> AsOperand for T {
+    default fn as_op(&self) -> Operand {
+        Operand::Text(format!("{:?}", self))
+    }
+}
+
+impl AsOperand for Id {
+    fn as_op(&self) -> Operand {
+        Operand::Id(self.0)
+    }
+}
+impl AsOperand for ResultId {
+    fn as_op(&self) -> Operand {
+        Operand::Id(self.0)
+    }
+}
+impl AsOperand for ValueId {
+    fn as_op(&self) -> Operand {
+        Operand::Id(self.0)
+    }
+}
+
+impl AsOperand for TypeId {
+    fn as_op(&self) -> Operand {
+        Operand::Type(self.0)
+    }
+}
+
+impl AsOperand for str {
+    fn as_op(&self) -> Operand {
+        Operand::Text(String::from(self))
+    }
+}
+impl AsOperand for String {
+    fn as_op(&self) -> Operand {
+        Operand::LitString(self.clone())
+    }
+}
+
+impl AsOperand for bool {
+    fn as_op(&self) -> Operand {
+        Operand::LitInt(if *self {1} else {0})
+    }
+}
+
+impl AsOperand for u32 {
+    fn as_op(&self) -> Operand {
+        Operand::LitInt(*self)
+    }
+}
+
+fn new_instruction(class: &str, result_id: Option<u32>, operands: Vec<Operand>) -> Result<Value, String> {
+    let mut res = Map::new();
+
+    res.insert(String::from("class"), to_value(class));
+
+    if let Some(id) = result_id {
+        res.insert(String::from("result_id"), to_value(id));
+    }
+
+    res.insert(String::from("operands"), Value::Array(
+        operands.into_iter()
+            .map(new_operand)
+            .collect()
+    ));
+
+    Ok(Value::Object(res))
+}
+
+fn convert_instruction(inst: Inst) -> Result<Value, String> {
+    match inst {
+        Inst::Capability { capability } => new_instruction(
+            "OpCapability",
+            None,
             vec![
-                Operand::IdRef(target.0),
+                capability.as_op(),
+            ]
+        ),
+        Inst::MemoryModel { addressing_model, memory_model } => new_instruction(
+            "OpMemoryModel",
+            None,
+            vec![
+                addressing_model.as_op(),
+                memory_model.as_op(),
+            ]
+        ),
+        Inst::EntryPoint { execution_model, func, name, interface } => new_instruction(
+            "OpEntryPoint",
+            None,
+            vec![
+                execution_model.as_op(),
+                func.as_op(),
+                name.as_op(),
+            ].into_iter()
+                .chain(
+                    interface.into_iter()
+                        .map(|id| id.as_op())
+                )
+                .collect()
+        ),
+        Inst::ExecutionMode { entry, execution_mode } => new_instruction(
+            "OpExecutionMode",
+            None,
+            vec![
+                entry.as_op(),
+                execution_mode.as_op(),
+            ]
+        ),
+        Inst::Decorate { target, ref decoration } => new_instruction(
+            "OpDecorate",
+            None,
+            vec![
+                target.as_op(),
             ].into_iter()
                 .chain(
                     vec![decoration].into_iter()
                         .flat_map(|d| match d {
                             &Deco::Location(loc) => vec![
-                                Operand::Decoration(Decoration::Location),
-                                Operand::LiteralInt32(loc),
+                                "Location".as_op(),
+                                Operand::LitInt(loc),
                             ],
                             _ => vec![]
                         })
@@ -44,380 +194,336 @@ fn convert_instruction(inst: &Inst) -> Result<Instruction, String> {
                 .collect()
         ),
 
-        &Inst::TypeVoid { result_type } => new_instruction(
-            Op::TypeVoid,
-            Some(result_type.0), None,
+        Inst::Function { result_type, result_id, function_control, fn_ty } => new_instruction(
+            "OpFunction",
+            Some(result_id.0),
+            vec![
+                result_type.as_op(),
+                format!("{}", function_control).as_str().as_op(),
+                fn_ty.as_op(),
+            ]
+        ),
+        Inst::Label { result_id } => new_instruction(
+            "OpLabel",
+            Some(result_id.0),
             vec![]
         ),
-        &Inst::TypeFunction { result_type, return_ty, ref params } => new_instruction(
-            Op::TypeFunction,
-            Some(result_type.0), None,
+        Inst::Return => new_instruction(
+            "OpReturn",
+            None, vec![]
+        ),
+        Inst::FunctionEnd => new_instruction(
+            "OpFunctionEnd",
+            None, vec![]
+        ),
+
+        Inst::TypeVoid { result_type } => new_instruction(
+            "OpTypeVoid",
+            Some(result_type.0),
+            vec![]
+        ),
+        Inst::TypeFunction { result_type, return_ty, ref params } => new_instruction(
+            "OpTypeFunction",
+            Some(result_type.0),
             vec![
-                Operand::IdRef(return_ty.0)
+                return_ty.as_op(),
             ].into_iter()
                 .chain(
                     params.into_iter()
-                        .map(|id| Operand::IdRef(id.0))
+                        .map(|id| id.as_op())
                 )
                 .collect()
         ),
-        &Inst::TypeFloat { result_type, width } => new_instruction(
-            Op::TypeFloat,
-            Some(result_type.0), None,
-            vec![
-                Operand::LiteralInt32(width)
-            ]
-        ),
-        &Inst::TypeVector { result_type, type_id, len } => new_instruction(
-            Op::TypeVector,
+        Inst::TypeFloat { result_type, width } => new_instruction(
+            "OpTypeFloat",
             Some(result_type.0),
-            Some(type_id.0),
             vec![
-                Operand::LiteralInt32(len)
+                width.as_op(),
             ]
         ),
-        &Inst::TypePointer { result_type, storage_class, pointee } => new_instruction(
-            Op::TypePointer,
-            Some(result_type.0), None,
+        Inst::TypeInt { result_type, width, signed } => new_instruction(
+            "OpTypeInt",
+            Some(result_type.0),
             vec![
-                Operand::StorageClass(match storage_class {
-                    desc::StorageClass::Input => StorageClass::Input,
-                    desc::StorageClass::Output => StorageClass::Output,
-                    _ => return Err(format!("Unimplemented storage class {:?}", storage_class))
-                }),
-                Operand::IdRef(pointee.0)
+                width.as_op(),
+                signed.as_op(),
+            ]
+        ),
+        Inst::TypeVector { result_type, type_id, len } => new_instruction(
+            "OpTypeVector",
+            Some(result_type.0),
+            vec![
+                type_id.as_op(),
+                len.as_op(),
+            ]
+        ),
+        Inst::TypePointer { result_type, storage_class, pointee } => new_instruction(
+            "OpTypePointer",
+            Some(result_type.0),
+            vec![
+                storage_class.as_op(),
+                pointee.as_op(),
             ]
         ),
 
-        &Inst::Constant { result_type, result_id, ref val } => new_instruction(
-            Op::Constant,
-            Some(result_id.0), None,
+        Inst::Constant { result_type, result_id, ref val } => new_instruction(
+            "OpConstant",
+            Some(result_id.0),
             vec![
-                Operand::IdRef(result_type.0)
+                result_type.as_op(),
             ].into_iter()
                 .chain(
                     val.into_iter()
-                        .map(|v| Operand::LiteralFloat32(unsafe {
+                        .map(|v| Operand::LitFloat(unsafe {
                             transmute(*v)
                         }))
                 )
                 .collect()
         ),
-        &Inst::ConstantComposite { result_type, result_id, ref flds } => new_instruction(
-            Op::ConstantComposite,
-            Some(result_id.0), None,
+        Inst::ConstantComposite { result_type, result_id, ref flds } => new_instruction(
+            "OpConstantComposite",
+            Some(result_id.0),
             vec![
-                Operand::IdRef(result_type.0)
+                result_type.as_op(),
             ].into_iter()
                 .chain(
                     flds.into_iter()
-                        .map(|v| Operand::IdRef(v.0))
+                        .map(|v| v.as_op())
                 )
                 .collect()
         ),
 
-        &Inst::Variable { result_type, result_id, storage_class, init } => new_instruction(
-            Op::Variable,
+        Inst::Variable { result_type, result_id, storage_class, init } => new_instruction(
+            "OpVariable",
             Some(result_id.0),
-            Some(result_type.0),
-            {
-                let mut res = Vec::new();
-                res.push(Operand::StorageClass(match storage_class {
-                    desc::StorageClass::Input => StorageClass::Input,
-                    desc::StorageClass::Output => StorageClass::Output,
-                    _ => return Err(format!("Unimplemented storage class {:?}", storage_class))
-                }));
-
-                if init.0 != 0 {
-                    res.push(Operand::IdRef(init.0));
-                }
-
-                res
-            }
-        ),
-        &Inst::Load { result_type, result_id, value_id, memory_access } => new_instruction(
-            Op::Load,
-            Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(value_id.0),
-                Operand::MemoryAccess(
-                    MemoryAccess::from_bits_truncate(memory_access.bits())
-                )
+                result_type.as_op(),
+                storage_class.as_op(),
+            ].into_iter()
+                .chain((if init.0 != 0 {
+                    vec![init.as_op()]
+                } else {
+                    vec![]
+                }).into_iter())
+                .collect()
+        ),
+        Inst::Load { result_type, result_id, value_id, memory_access } => new_instruction(
+            "OpLoad",
+            Some(result_id.0),
+            vec![
+                result_type.as_op(),
+                value_id.as_op(),
+                format!("{}", memory_access).as_str().as_op(),
             ]
         ),
-        &Inst::Store { ptr, obj, memory_access } => new_instruction(
-            Op::Store,
-            None, None,
+        Inst::Store { ptr, obj, memory_access } => new_instruction(
+            "OpStore",
+            None,
             vec![
-                Operand::IdRef(ptr.0),
-                Operand::IdRef(obj.0),
-                Operand::MemoryAccess(
-                    MemoryAccess::from_bits_truncate(memory_access.bits())
-                )
+                ptr.as_op(),
+                obj.as_op(),
+                format!("{}", memory_access).as_str().as_op(),
             ]
         ),
 
-        &Inst::ExtInst { result_type, result_id, set, instruction, ref operands } => new_instruction(
-            Op::ExtInst,
+        Inst::ExtInst { result_type, result_id, set, instruction, ref operands } => new_instruction(
+            "OpExtInst",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(set.0),
-                Operand::LiteralExtInstInteger(instruction)
+                result_type.as_op(),
+                set.as_op(),
+                Operand::ExtInst(unsafe {
+                    transmute(instruction)
+                })
             ].into_iter()
                 .chain(
                     operands.into_iter()
-                        .map(|id| Operand::IdRef(id.0))
+                        .map(|id| id.as_op())
                 )
                 .collect()
         ),
-        &Inst::Dot { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::Dot,
+        Inst::ExtInstImport { result_id, ref name } => new_instruction(
+            "OpExtInstImport",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
+                name.as_op(),
             ]
         ),
 
-        &Inst::IAdd { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::IAdd,
+        Inst::Dot { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpDot",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
-            ]
-        ),
-        &Inst::FAdd { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::FAdd,
-            Some(result_id.0),
-            Some(result_type.0),
-            vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
             ]
         ),
 
-        &Inst::ISub { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::ISub,
+        Inst::IAdd { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpIAdd",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
             ]
         ),
-        &Inst::FSub { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::FSub,
+        Inst::FAdd { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpFAdd",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
-            ]
-        ),
-
-        &Inst::IMul { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::IMul,
-            Some(result_id.0),
-            Some(result_type.0),
-            vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
-            ]
-        ),
-        &Inst::FMul { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::FMul,
-            Some(result_id.0),
-            Some(result_type.0),
-            vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
             ]
         ),
 
-        &Inst::VectorTimesMatrix { result_type, result_id, vector, matrix } => new_instruction(
-            Op::VectorTimesMatrix,
+        Inst::ISub { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpISub",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(vector.0),
-                Operand::IdRef(matrix.0)
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
             ]
         ),
-        &Inst::VectorTimesScalar { result_type, result_id, vector, scalar } => new_instruction(
-            Op::VectorTimesScalar,
+        Inst::FSub { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpFSub",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(vector.0),
-                Operand::IdRef(scalar.0)
-            ]
-        ),
-
-        &Inst::MatrixTimesVector { result_type, result_id, matrix, vector } => new_instruction(
-            Op::MatrixTimesVector,
-            Some(result_id.0),
-            Some(result_type.0),
-            vec![
-                Operand::IdRef(matrix.0),
-                Operand::IdRef(vector.0)
-            ]
-        ),
-        &Inst::MatrixTimesMatrix { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::MatrixTimesMatrix,
-            Some(result_id.0),
-            Some(result_type.0),
-            vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
             ]
         ),
 
-        &Inst::SDiv { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::SDiv,
+        Inst::IMul { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpIMul",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
             ]
         ),
-        &Inst::FDiv { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::FDiv,
+        Inst::FMul { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpFMul",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
             ]
         ),
 
-        &Inst::SMod { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::SMod,
+        Inst::VectorTimesMatrix { result_type, result_id, vector, matrix } => new_instruction(
+            "OpVectorTimesMatrix",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
+                result_type.as_op(),
+                vector.as_op(),
+                matrix.as_op(),
             ]
         ),
-        &Inst::FMod { result_type, result_id, lhs, rhs } => new_instruction(
-            Op::FMod,
+        Inst::VectorTimesScalar { result_type, result_id, vector, scalar } => new_instruction(
+            "OpVectorTimesScalar",
             Some(result_id.0),
-            Some(result_type.0),
             vec![
-                Operand::IdRef(lhs.0),
-                Operand::IdRef(rhs.0)
+                result_type.as_op(),
+                vector.as_op(),
+                scalar.as_op(),
+            ]
+        ),
+
+        Inst::MatrixTimesVector { result_type, result_id, matrix, vector } => new_instruction(
+            "OpMatrixTimesVector",
+            Some(result_id.0),
+            vec![
+                result_type.as_op(),
+                matrix.as_op(),
+                vector.as_op(),
+            ]
+        ),
+        Inst::MatrixTimesMatrix { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpMatrixTimesMatrix",
+            Some(result_id.0),
+            vec![
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
+            ]
+        ),
+
+        Inst::SDiv { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpSDiv",
+            Some(result_id.0),
+            vec![
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
+            ]
+        ),
+        Inst::FDiv { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpFDiv",
+            Some(result_id.0),
+            vec![
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
+            ]
+        ),
+
+        Inst::SMod { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpSMod",
+            Some(result_id.0),
+            vec![
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
+            ]
+        ),
+        Inst::FMod { result_type, result_id, lhs, rhs } => new_instruction(
+            "OpFMod",
+            Some(result_id.0),
+            vec![
+                result_type.as_op(),
+                lhs.as_op(),
+                rhs.as_op(),
             ]
         ),
 
         _ => return Err(format!("Unimplemented instruction {:?}", inst))
-    })
+    }
 }
 
 pub fn module_printer(module: Mod) -> Result<String, String> {
-    let program = Module {
-        header: Some(ModuleHeader::new(
-            0x07230203u32,
-            0x00010000,
-            0x000c0001,
-            module.bound(),
-            0
-        )),
-        capabilities: vec![
-            Capability::Shader
-        ],
-        ext_inst_imports: module.get_imports(),
-        addressing_model: Some(
-            AddressingModel::Logical
-        ),
-        memory_model: Some(
-            MemoryModel::GLSL450
-        ),
-        entry_points: vec![new_instruction(
-            Op::EntryPoint,
-            None, None,
-            vec![
-                Operand::ExecutionModel(match module.get_type() {
-                    ShaderType::Vertex => ExecutionModel::Vertex,
-                    ShaderType::Fragment => ExecutionModel::Fragment,
-                    _ => return Err(format!("Unimplemented execution model {:?}", module.get_type()))
-                }),
-                Operand::IdRef(2),
-                Operand::LiteralString(String::from("main"))
-            ].into_iter()
-                .chain(
-                    module.get_io()
-                        .into_iter()
-                        .map(|id| Operand::IdRef(id))
-                )
-                .collect()
-        )],
-        execution_modes: vec![new_instruction(
-            Op::ExecutionMode,
-            None, None,
-            vec![
-                Operand::IdRef(4),
-                Operand::ExecutionMode(
-                    ExecutionMode::OriginUpperLeft
-                )
-            ]
-        )],
-        annotations: try!(
-            module.get_annotations().iter()
-                .map(|inst| convert_instruction(inst))
-                .collect()
-        ),
-        types_global_values: try!(
-            module.get_declarations().iter()
-                .map(|inst| convert_instruction(inst))
-                .collect()
-        ),
-        functions: vec![
-            Function {
-                def: Some(new_instruction(
-                    Op::Function,
-                    Some(4), Some(1),
-                    vec![
-                        Operand::FunctionControl(
-                            FunctionControl::empty()
-                        ),
-                        Operand::IdRef(2)
-                    ]
-                )),
-                parameters: vec![],
-                basic_blocks: vec![BasicBlock {
-                    label: Some(new_instruction(
-                        Op::Label,
-                        Some(3), None, vec![]
-                    )),
-                    instructions: try!(
-                        module.get_instructions()
-                            .iter()
-                            .map(|inst| convert_instruction(inst))
-                            .chain(vec![Ok(
-                                new_instruction(
-                                    Op::Return,
-                                    None, None, vec![]
-                                )
-                            )].into_iter())
-                            .collect()
-                    ),
-                }],
-                end: Some(new_instruction(
-                    Op::FunctionEnd,
-                    None, None, vec![]
-                )),
-                ..Function::new()
-            }
-        ],
-        ..Module::new()
-    };
+    let mut result = Map::new();
 
+    result.insert("bound", to_value(module.bound()));
 
-    Ok(program.disassemble())
+    result.insert("instructions", Value::Array(try!(
+        vec![
+            new_instruction(";", None, vec![
+                "SPIR-V".as_op()
+            ]),
+            new_instruction(";", None, vec![
+                "Version: 1.0".as_op()
+            ]),
+            new_instruction(";", None, vec![
+                "Generator: Rasen; 1".as_op()
+            ]),
+            new_instruction(";", None, vec![
+                format!("Bound: {}", module.bound()).as_str().as_op()
+            ]),
+            new_instruction(";", None, vec![
+                "Schema: 0".as_op()
+            ]),
+        ].into_iter().chain(
+            module.get_operations().into_iter()
+                .map(convert_instruction)
+        ).collect()
+    )));
+
+    to_string(&result).map_err(|err| format!("{}", err))
 }

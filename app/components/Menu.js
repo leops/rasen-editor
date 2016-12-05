@@ -20,28 +20,46 @@ type Props = {
     addNode: (node: Object) => void
 };
 
+function unaryNode(title: string): Object {
+    return {
+        title,
+        inputs: new List([
+            new Pin({
+                name: 'value',
+            }),
+        ]),
+        outputs: new List([
+            new Pin({
+                name: 'result',
+            }),
+        ]),
+    };
+}
+
 function binaryNode(title: string): Object {
     return {
         title,
         inputs: new List([
             new Pin({
-                name: 'a'
+                name: 'a',
             }),
             new Pin({
-                name: 'b'
-            })
+                name: 'b',
+            }),
         ]),
         outputs: new List([
             new Pin({
-                name: 'result'
-            })
-        ])
+                name: 'result',
+            }),
+        ]),
     };
 }
 
 export default ({ menu, addNode }: Props) => (
     <div className={styles.menu} style={{
-        transform: `translate(${menu.x}px, ${menu.y}px)`
+        transform: `translate(${menu.x}px, ${menu.y}px)`,
+        maxHeight: menu.maxHeight,
+        maxWidth: menu.maxWidth,
     }}>
         {[{
             title: 'Variables',
@@ -49,36 +67,36 @@ export default ({ menu, addNode }: Props) => (
                 title: 'Input',
                 data: new Map({
                     type: 'float',
-                    location: '0'
+                    location: '0',
                 }),
                 outputs: new List([
                     new Pin({
-                        name: 'value'
-                    })
-                ])
+                        name: 'value',
+                    }),
+                ]),
             }, {
                 title: 'Output',
                 data: new Map({
                     type: 'float',
-                    location: '0'
+                    location: '0',
                 }),
                 inputs: new List([
                     new Pin({
-                        name: 'value'
-                    })
+                        name: 'value',
+                    }),
                 ]),
             }, {
                 title: 'Constant',
                 data: new Map({
                     type: 'float',
-                    value: '1.0'
+                    value: '1.0',
                 }),
                 outputs: new List([
                     new Pin({
-                        name: 'value'
-                    })
-                ])
-            }]
+                        name: 'value',
+                    }),
+                ]),
+            }],
         }, {
             title: 'Math',
             types: [
@@ -87,43 +105,79 @@ export default ({ menu, addNode }: Props) => (
                 binaryNode('Multiply'),
                 binaryNode('Divide'),
                 binaryNode('Modulus'),
-                binaryNode('Dot')
-            ]
+                binaryNode('Dot'),
+            ],
         }, {
             title: 'GLSL',
             types: [
+                unaryNode('Normalize'),
                 {
-                    title: 'Normalize',
+                    title: 'Clamp',
                     inputs: new List([
                         new Pin({
-                            name: 'value'
-                        })
+                            name: 'value',
+                        }),
+                        new Pin({
+                            name: 'min',
+                        }),
+                        new Pin({
+                            name: 'max',
+                        }),
                     ]),
                     outputs: new List([
                         new Pin({
-                            name: 'result'
-                        })
-                    ])
+                            name: 'result',
+                        }),
+                    ]),
                 },
+                binaryNode('Cross'),
+                unaryNode('Floor'),
+                unaryNode('Ceil'),
+                unaryNode('Round'),
+                unaryNode('Sin'),
+                unaryNode('Cos'),
+                unaryNode('Tan'),
                 {
-                    title: 'Clamp',
-                    inputs: new List()
-                        .push(new Pin({
-                            name: 'value'
-                        }))
-                        .push(new Pin({
-                            name: 'min'
-                        }))
-                        .push(new Pin({
-                            name: 'max'
-                        })),
-                    outputs: new List()
-                        .push(new Pin({
-                            name: 'result'
-                        }))
+                    title: 'Pow',
+                    inputs: new List([
+                        new Pin({
+                            name: 'base',
+                        }),
+                        new Pin({
+                            name: 'exp',
+                        }),
+                    ]),
+                    outputs: new List([
+                        new Pin({
+                            name: 'result',
+                        }),
+                    ]),
                 },
-                binaryNode('Cross')
-            ]
+                binaryNode('Min'),
+                binaryNode('Max'),
+                unaryNode('Length'),
+                binaryNode('Distance'),
+                binaryNode('Reflect'),
+                {
+                    title: 'Refract',
+                    inputs: new List([
+                        new Pin({
+                            name: 'vector',
+                        }),
+                        new Pin({
+                            name: 'normal',
+                        }),
+                        new Pin({
+                            name: 'indice',
+                        }),
+                    ]),
+                    outputs: new List([
+                        new Pin({
+                            name: 'result',
+                        }),
+                    ]),
+                },
+            ],
         }].map(({ title, types }) => (
             <details key={title}>
                 <summary>{title}</summary>

@@ -1,27 +1,39 @@
 .node {
-    background-color: rgba(255, 255, 255, 0.17);
-    border: 2px solid #1c933b;
-    box-shadow: 4px 6px 8px rgba(0, 0, 0, 0.47);
-    border-radius: 8px;
+    min-width: 200px;
+
+    background: #fff;
+    border-radius: 2px;
+    font-size: 12px;
+    border: 1px solid #e9e9e9;
+
+    transition: all .3s;
 }
 
-.node > h1 {
-    color: #eee;
-    font-size: 1em;
+.head {
+    height: 48px;
+    line-height: 48px;
+    border-bottom: 1px solid #e9e9e9;
+    padding: 0 24px;
+}
+
+.head > h3 {
+    font-size: 14px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    width: 100%;
+    overflow: hidden;
     white-space: nowrap;
-    margin: 0;
-    padding: 8px 24px;
-    margin-bottom: 4px
 }
 
-.node > div {
+.body {
+    padding: 24px 0;
+
     flex: 1;
     display: flex;
     flex-direction: row;
-    padding: 8px 16px;
 }
 
-.node > div > div {
+.body > div {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -33,18 +45,17 @@
 
 .pin {
     position: relative;
-    margin: 10px 0px;
-    color: #eee;
 }
 
 .pin::before {
     content: "";
 
-    box-sizing: border-box;
     height: 8px;
     width: 8px;
-    border-radius: 4px;
-    border: 1px solid white;
+    border-radius: 100%;
+
+    background: #fff;
+    box-shadow: 0 0 0 1px rgb(217, 217, 217);
 
     position: absolute;
     transform: translateY(-50%);
@@ -52,12 +63,11 @@
 }
 
 .pin[data-connected="true"]::before {
-    background-color: white;
+    background-color: #666;
 }
 
 .outputs .pin {
-    padding-right: 16px;
-    right: -16px;
+    padding-right: 12px;
 }
 
 .outputs .pin::before {
@@ -65,8 +75,7 @@
 }
 
 .inputs .pin {
-    padding-left: 16px;
-    left: -16px;
+    padding-left: 12px;
 }
 
 .inputs .pin::before {

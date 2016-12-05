@@ -6,6 +6,7 @@ import validate from 'webpack-validator';
 import ExtractTextPlugin from 'extract-text-webpack-plugin';
 import merge from 'webpack-merge';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import autoprefixer from 'autoprefixer';
 import baseConfig from './webpack.config.base';
 
 const config = validate(merge(baseConfig, {
@@ -47,6 +48,16 @@ const config = validate(merge(baseConfig, {
             { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: 'file' },
             { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=image/svg+xml' },
         ]
+    },
+
+    postcss() {
+        return [
+            autoprefixer({
+                browsers: [
+                    'Chrome > 50',
+                ],
+            }),
+        ];
     },
 
     plugins: [

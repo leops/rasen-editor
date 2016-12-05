@@ -6,6 +6,7 @@ import validate from 'webpack-validator';
 import merge from 'webpack-merge';
 import formatter from 'eslint-formatter-pretty';
 import FlowStatusPlugin from 'flow-status-webpack-plugin';
+import autoprefixer from 'autoprefixer';
 import baseConfig from './webpack.config.base';
 
 const port = process.env.PORT || 3000;
@@ -36,7 +37,7 @@ export default validate(merge(baseConfig, {
                 test: /\.global\.css$/,
                 loaders: [
                     'style-loader',
-                    'css-loader?sourceMap'
+                    'css-loader?sourceMap&importLoaders=1!postcss'
                 ]
             },
 
@@ -44,7 +45,7 @@ export default validate(merge(baseConfig, {
                 test: /^((?!\.global).)*\.css$/,
                 loaders: [
                     'style-loader',
-                    'css-loader?modules&sourceMap&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]'
+                    'css-loader?modules&sourceMap&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss'
                 ]
             },
 
@@ -54,6 +55,16 @@ export default validate(merge(baseConfig, {
             { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: 'file' },
             { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=image/svg+xml' },
         ]
+    },
+
+    postcss() {
+        return [
+            autoprefixer({
+                browsers: [
+                    'Chrome > 50',
+                ],
+            }),
+        ];
     },
 
     eslint: {

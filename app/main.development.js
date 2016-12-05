@@ -1,7 +1,10 @@
 import {
-    app, BrowserWindow, Menu
+    app, BrowserWindow, Menu,
 } from 'electron';
+import path from 'path';
 import menuTemplate from './menu';
+
+import './utils/rasen.main';
 
 let mainWindow = null;
 

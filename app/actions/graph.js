@@ -1,11 +1,15 @@
 // @flow
 import fs from 'fs';
 import {
-    remote
+    remote,
 } from 'electron';
 import type {
-    GraphState, Node
+    GraphState, Node,
 } from 'react-graph-editor';
+
+import {
+    toBytecode,
+} from '../utils/rasen.render';
 
 export const UPDATE_GRAPH = 'UPDATE_GRAPH';
 export const ADD_NODE = 'ADD_NODE';
@@ -118,6 +122,23 @@ export function saveAs() {
                     path
                 });
             });
+        });
+    };
+}
+
+export function saveBC() {
+    return (dispatch: Dispatcher, getState: StateGetter) => {
+        remote.dialog.showSaveDialog({
+            filters: [{
+                name: 'SPIR-V',
+                extensions: ['spirv']
+            }]
+        }, path => {
+            const {
+                graph
+            } = getState();
+
+            toBytecode(graph, path);
         });
     };
 }

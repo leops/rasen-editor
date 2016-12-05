@@ -23,10 +23,13 @@ type NodeProps = {
 
 export default (props: NodeProps) => (
     <div className={styles.node} style={{
-        borderColor: props.selected ? undefined : 'transparent'
+        borderColor: props.selected && '#FF6100',
+        boxShadow: props.selected && '0 1px 6px rgba(0, 0, 0, 0.2)',
     }}>
-        <h1>{props.node.title}</h1>
-        <div>
+        <div className={styles.head}>
+            <h3>{props.node.title}</h3>
+        </div>
+        <div className={styles.body}>
             <div className={styles.inputs}>
                 {props.inputs}
             </div>

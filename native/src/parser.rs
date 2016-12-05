@@ -139,6 +139,25 @@ pub fn parse_input(input: String) -> Result<Graph, String> {
             "Dot" => Node::Dot,
             "Cross" => Node::Cross,
 
+            "Floor" => Node::Floor,
+            "Ceil" => Node::Ceil,
+            "Round" => Node::Round,
+
+            "Sin" => Node::Sin,
+            "Cos" => Node::Cos,
+            "Tan" => Node::Tan,
+
+            "Pow" => Node::Pow,
+
+            "Min" => Node::Min,
+            "Max" => Node::Max,
+
+            "Length" => Node::Length,
+            "Distance" => Node::Distance,
+
+            "Reflect" => Node::Reflect,
+            "Refract" => Node::Refract,
+
             "Add" => Node::Add,
             "Substract" => Node::Substract,
             "Multiply" => Node::Multiply,
@@ -152,9 +171,9 @@ pub fn parse_input(input: String) -> Result<Graph, String> {
     }
 
     let edges = try!(get_prop(data, "edges", "data"));
-    let edges = try!(edges.as_array().ok_or("edges is not an array"));
+    let edges = try!(edges.as_object().ok_or("edges is not an object"));
 
-    for edge in edges.iter() {
+    for (id, edge) in edges.iter() {
         let edge = try!(edge.as_object().ok_or("edge is not an object"));
 
         let from = try!(get_prop(edge, "from", "edge"));
@@ -163,9 +182,13 @@ pub fn parse_input(input: String) -> Result<Graph, String> {
         let to = try!(get_prop(edge, "to", "edge"));
         let to = try!(to.as_u64().ok_or("edge destination is not a number"));
 
+        let id = id.split(":");
+        let id = try!(id.last().ok_or("edge index has invalid format"));
+
         graph.add_edge(
             *try!(mappings.get(&format!("{}", from)).ok_or("edge origin node is undefined")),
-            *try!(mappings.get(&format!("{}", to)).ok_or("edge destination node is undefined"))
+            *try!(mappings.get(&format!("{}", to)).ok_or("edge destination node is undefined")),
+            try!(id.parse().map_err(|_| String::from("edge index is not an integer"))),
         );
     }
 

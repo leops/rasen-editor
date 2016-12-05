@@ -1,39 +1,40 @@
 .menu {
     position: absolute;
+    min-width: 240px;
+    overflow: auto;
 
-    margin: 0;
-    padding: 0;
-    border-radius: 4px;
-
-    color: white;
-    background: rgba(0, 0, 0, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 4px 6px 8px rgba(0, 0, 0, 0.47);
+    background: #fff;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+    line-height: 46px;
 }
 
 .menu summary {
-    padding: 8px 16px;
+    padding: 0px 16px 0 28px;
+    font-size: 12px;
+    line-height: 42px;
+    height: 42px;
+}
+
+.menu summary:hover, .submenu button:hover {
+    background-color: #e7f4fd;
+    cursor: pointer;
 }
 
 .submenu {
     display: flex;
     flex-direction: column;
-
-    margin: 0;
-    padding: 0;
 }
 
 .submenu button {
-    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
     border: none;
-    padding: 8px 16px 8px 32px;
     background: none;
-    color: white;
-    font-size: 1em;
+    color: inherit;
     text-align: start;
-}
 
-.submenu button:hover {
-    color: rgba(0, 0, 0, 0.8);
-    background-color: white;
+    padding: 0px 16px 0 48px;
+    font-size: 12px;
+    line-height: 42px;
+    height: 42px;
 }

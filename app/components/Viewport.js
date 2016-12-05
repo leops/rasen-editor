@@ -24,6 +24,14 @@ type Props = {
 export default (props: Props) => (
     <Graph
         className={styles.graph}
+        style={{
+            backgroundPosition: `
+                ${props.graph.viewport.translateX - 2}px ${props.graph.viewport.translateY - 2}px,
+                ${props.graph.viewport.translateX - 2}px ${props.graph.viewport.translateY - 2}px,
+                ${props.graph.viewport.translateX - 1}px ${props.graph.viewport.translateY - 1}px,
+                ${props.graph.viewport.translateX - 1}px ${props.graph.viewport.translateY - 1}px
+            `
+        }}
 
         value={props.graph}
         onChange={props.updateGraph}

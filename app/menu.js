@@ -1,5 +1,5 @@
 import {
-    app
+    app,
 } from 'electron';
 
 export default [{
@@ -61,6 +61,13 @@ export default [{
         click(evt, focusedWindow) {
             if (focusedWindow) {
                 focusedWindow.webContents.send('action', 'saveAs');
+            }
+        }
+    }, {
+        label: 'Export',
+        click(evt, focusedWindow) {
+            if (focusedWindow) {
+                focusedWindow.webContents.send('action', 'saveBC');
             }
         }
     }, {
