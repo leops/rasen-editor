@@ -6,7 +6,7 @@ import path from 'path';
 
 const ffi = remote.require('ffi');
 
-const rasen = ffi.Library(path.join(__dirname, '../native/target/debug/rasen'), {
+const rasen = ffi.Library(path.join(__dirname, '../native/target/release/rasen'), {
     to_assembly: ['string', ['string']],
 });
 
@@ -14,24 +14,14 @@ const serializeGraph = ({ editorState }) => JSON.stringify({
     nodes: editorState.nodes
         .map(({ title, data }) => ({
             ...data
-                .map(prop => {
-                    try {
-                        return JSON.parse(prop);
-                    } catch (err) {
-                        return prop;
-                    }
-                })
+                .map(prop => prop.get('value'))
                 .toObject(),
             title
         }))
-        .toJS(),
+        .toObject(),
     edges: editorState.edges
-        .toMap()
-        .mapEntries(([key, { input, from, to }]) => ([
-            `${key}:${input}`,
-            { from, to }
-        ]))
-        .toJS()
+        .map(({ from, to, input }) => ({ from, to, input }))
+        .toArray()
 });
 
 export function toAssembly(graph) {

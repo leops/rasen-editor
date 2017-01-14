@@ -130,15 +130,20 @@ export function saveBC() {
     return (dispatch: Dispatcher, getState: StateGetter) => {
         remote.dialog.showSaveDialog({
             filters: [{
-                name: 'SPIR-V',
-                extensions: ['spirv']
+                name: 'SPIR-V Binary',
+                extensions: ['spv'],
+            }, {
+                name: 'SPIR-V Assembly',
+                extensions: ['spvasm'],
             }]
         }, path => {
-            const {
-                graph
-            } = getState();
+            if (path) {
+                const {
+                    graph
+                } = getState();
 
-            toBytecode(graph, path);
+                toBytecode(graph, path);
+            }
         });
     };
 }

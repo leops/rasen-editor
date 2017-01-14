@@ -1,5 +1,6 @@
 #![feature(specialization)]
 
+extern crate error_chain;
 extern crate spirv_utils;
 extern crate serde;
 extern crate serde_json;
@@ -8,30 +9,46 @@ extern crate rasen;
 mod parser;
 mod printer;
 
+use error_chain::ChainedError;
 use std::ffi::{CStr, CString};
 use std::os::raw::{
     c_char, c_void,
 };
 use std::mem;
+use std::fmt::Write;
 
 use rasen::*;
 
 use parser::*;
 use printer::*;
 
+fn print_err<E>(e: E) -> String where E: ChainedError {
+    let mut err = String::new();
+    writeln!(&mut err, "{}", e).unwrap();
+
+    for e in e.iter().skip(1) {
+        writeln!(&mut err, "caused by: {}", e).unwrap();
+    }
+
+    if let Some(backtrace) = e.backtrace() {
+        writeln!(&mut err, "backtrace: {:?}", backtrace).unwrap();
+    }
+
+    err
+}
+
 fn convert_asm(input: String) -> Result<String, String> {
-    let graph = try!(parse_input(input));
+    let graph = parse_input(input)?;
     module_printer(
-        try!(Module::build(&graph, ShaderType::Fragment))
+        Module::build(&graph, ShaderType::Fragment)
+            .map_err(print_err)?
     )
 }
 
 fn convert_bc(input: String) -> Result<Vec<u8>, String> {
-    let graph = try!(parse_input(input));
-    match build_program(&graph, ShaderType::Fragment) {
-        Ok(res) => Ok(res),
-        Err(msg) => Err(String::from(msg)),
-    }
+    let graph = parse_input(input)?;
+    build_program(&graph, ShaderType::Fragment)
+        .map_err(print_err)
 }
 
 #[no_mangle]
@@ -71,7 +88,7 @@ pub extern fn to_bytecode(input: *const c_char) -> *const u8 {
     };
 
     let size: [u8; 8] = unsafe {
-        mem::transmute(vec.len())
+        mem::transmute(vec.len() as u64)
     };
 
     let mut res = Vec::new();
@@ -79,8 +96,6 @@ pub extern fn to_bytecode(input: *const c_char) -> *const u8 {
     res.extend(vec.into_iter());
 
     let ptr = res.as_ptr();
-    println!("{:?}", ptr);
-
     mem::forget(res);
     ptr
 }

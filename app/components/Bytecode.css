@@ -15,10 +15,6 @@
     overflow-y: auto;
 }
 
-.bytecode span::after {
-    content: ' ';
-}
-
 .comment {
     color: #989898;
 }
@@ -27,7 +23,7 @@
     color: #00A0E9;
 }
 
-.number, .function {
+.number, .func {
     color: #E01515;
 }
 

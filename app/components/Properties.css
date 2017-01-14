@@ -26,7 +26,21 @@
     margin-bottom: 24px;
 }
 
-.properties input {
+.vector {
+    display: flex;
+    flex-direction: row;
+
+    margin-bottom: 24px;
+    width: 100%;
+    padding: 6px 7px;
+    height: 32px;
+}
+
+.vector > * {
+    flex: 1;
+}
+
+.properties input:not([type=checkbox]), .properties select {
     position: relative;
     display: inline-block;
 
@@ -48,11 +62,11 @@
     border-radius: 4px;
 }
 
-.properties input:hover {
+.properties input:not([type=checkbox]):hover, .properties select:hover {
     border-color: #40a5ed;
 }
 
-.properties input:focus {
+.properties input:not([type=checkbox]):focus, .properties select:focus {
     outline: 0;
     border-color: #40a5ed;
     box-shadow: 0 0 0 2px rgba(16, 142, 233, 0.2);

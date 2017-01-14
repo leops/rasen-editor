@@ -26,7 +26,10 @@ export default class Bytecode extends Component {
     props: Props;
 
     render() {
+        // console.profile('toAssembly');
         const result = toAssembly(this.props.graph);
+        // console.profileEnd('toAssembly');
+
         if (result.error) {
             return (
                 <div className={styles.bytecode}>
@@ -35,7 +38,7 @@ export default class Bytecode extends Component {
             );
         }
 
-        let padding = 5;
+        let padding = 6;
         while (result.bound > 10) {
             padding += 1;
             result.bound /= 10;
@@ -48,53 +51,74 @@ export default class Bytecode extends Component {
                         {inst.result_id ? (
                             <span>
                                 <span className={styles.id}>
-                                    {leftPad(`%${inst.result_id}`, padding - 3)}
+                                    {leftPad(`%${inst.result_id}`, padding - 4)}
                                 </span>
-                                =
+                                {' = '}
                             </span>
                         ) : (
                             <span>
-                                {new Array(inst.class === ';' ? 0 : padding).join(' ')}
+                                {new Array(inst.class === ';' ? 1 : padding).join(' ')}
                             </span>
                         )}
                         <span className={styles.opcode}>{inst.class}</span>
-                        {inst.operands.map((op, i) => {
+                        {' '}
+                        {inst.operands.reduce((list, op, i, arr) => {
+                            let elem;
                             switch (op.operand) {
                                 case 'Id':
-                                    return (
+                                    elem = (
                                         <span key={i} className={styles.id}>
                                             %{op.value}
                                         </span>
                                     );
+                                    break;
+
                                 case 'Type':
-                                    return (
+                                    elem = (
                                         <span key={i} className={styles.type}>
                                             %{op.value}
                                         </span>
                                     );
+                                    break;
+
                                 case 'String':
-                                    return (
+                                    elem = (
                                         <span key={i} className={styles.string}>
                                             &quot;{op.value}&quot;
                                         </span>
                                     );
+                                    break;
+
                                 case 'Int':
                                 case 'Float':
-                                    return (
+                                case 'Double':
+                                    elem = (
                                         <span key={i} className={styles.number}>
                                             {op.value}
                                         </span>
                                     );
+                                    break;
+
                                 case 'ExtInst':
-                                    return (
-                                        <span key={i} className={styles.function}>
+                                    elem = (
+                                        <span key={i} className={styles.func}>
                                             {op.value}
                                         </span>
                                     );
+                                    break;
+
                                 default:
-                                    return <span key={i}>{op.value}</span>;
+                                    elem = <span key={i}>{op.value}</span>;
+                                    break;
                             }
-                        })}
+
+                            list.push(elem);
+                            if (i < arr.length - 1) {
+                                list.push(' ');
+                            }
+
+                            return list;
+                        }, [])}
                     </div>
                 ))}
             </div>
