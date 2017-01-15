@@ -22,6 +22,7 @@ aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
 * {
     box-sizing: border-box;
     user-select: inherit;
+    font-family: inherit;
 }
 
 #root {
@@ -73,4 +74,9 @@ aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
 }
 .Resizer.disabled:hover {
     border-color: transparent;
+}
+
+.Pane {
+    min-height: 0;
+    min-width: 0;
 }

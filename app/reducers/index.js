@@ -1,10 +1,13 @@
 // @flow
 import { combineReducers } from 'redux';
+
 import graph from './graph';
 import path from './path';
+import assembly from './assembly';
+import viewport from './viewport';
 
 const rootReducer = combineReducers({
-    graph, path
+    path, graph, assembly, viewport,
 });
 
 export default rootReducer;

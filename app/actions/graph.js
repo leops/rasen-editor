@@ -8,7 +8,7 @@ import type {
 } from 'react-graph-editor';
 
 import {
-    toBytecode,
+    exportGraph,
 } from '../utils/rasen.render';
 
 export const UPDATE_GRAPH = 'UPDATE_GRAPH';
@@ -142,7 +142,7 @@ export function saveBC() {
                     graph
                 } = getState();
 
-                toBytecode(graph, path);
+                exportGraph(graph, path);
             }
         });
     };

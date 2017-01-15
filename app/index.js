@@ -12,7 +12,7 @@ import {
 
 import configureStore from './store/configureStore';
 import * as actionCreators from './actions/graph';
-import App from './components/App';
+import App from './containers/App';
 import './app.global.css';
 
 const store = configureStore();

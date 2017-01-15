@@ -6,6 +6,7 @@ import {
 } from 'redux';
 import thunk from 'redux-thunk';
 import createLogger from 'redux-logger';
+import compiler from '../utils/compiler';
 import rootReducer from '../reducers';
 
 import * as graphActions from '../actions/graph';
@@ -17,7 +18,11 @@ const actionCreators = {
 const logger = createLogger({
     level: 'info',
     collapsed: true,
-    predicate: (getState, action) => action.type !== graphActions.UPDATE_GRAPH
+    predicate(getState, action) {
+        return action.type !== graphActions.UPDATE_GRAPH &&
+            action.type !== 'UPDATE_ASSEMBLY' &&
+            action.type.indexOf('SPLIT') === -1;
+    },
 });
 
 /* eslint-disable no-underscore-dangle */
@@ -29,7 +34,7 @@ const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ ?
 /* eslint-enable no-underscore-dangle */
 
 const enhancer = composeEnhancers(
-    applyMiddleware(thunk, logger)
+    applyMiddleware(thunk, compiler, logger)
 );
 
 export default function configureStore(initialState) {

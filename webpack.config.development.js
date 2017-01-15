@@ -5,7 +5,6 @@ import webpack from 'webpack';
 import validate from 'webpack-validator';
 import merge from 'webpack-merge';
 import formatter from 'eslint-formatter-pretty';
-import FlowStatusPlugin from 'flow-status-webpack-plugin';
 import autoprefixer from 'autoprefixer';
 import baseConfig from './webpack.config.base';
 
@@ -72,10 +71,6 @@ export default validate(merge(baseConfig, {
     },
 
     plugins: [
-        new FlowStatusPlugin({
-            failOnError: true
-        }),
-
         // https://webpack.github.io/docs/hot-module-replacement-with-webpack.html
         new webpack.HotModuleReplacementPlugin(),
 

@@ -5,13 +5,22 @@ import SplitPane from 'react-split-pane';
 import Viewport from '../containers/Viewport';
 import Properties from '../containers/Properties';
 import Bytecode from '../containers/Bytecode';
+import Scene from '../containers/Scene';
 
-export default () => (
-    <SplitPane split="vertical" defaultSize={500} primary="second">
+type Props = {
+    setVSplit: (size: number) => void,
+    setHSplit: (size: number) => void,
+};
+
+export default (props: Props) => (
+    <SplitPane split="vertical" defaultSize={500} primary="second" onChange={props.setVSplit}>
         <SplitPane split="horizontal" defaultSize={300} primary="second">
             <Viewport />
             <Properties />
         </SplitPane>
-        <Bytecode />
+        <SplitPane split="horizontal" defaultSize={500} primary="second" onChange={props.setHSplit}>
+            <Bytecode />
+            <Scene />
+        </SplitPane>
     </SplitPane>
 );

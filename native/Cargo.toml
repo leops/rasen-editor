@@ -10,10 +10,14 @@ crate-type = ["dylib"]
 [dependencies]
 serde = "0.8"
 serde_json = "0.8"
-spirv-utils = { git = "https://github.com/leops/spirv-utils.git", rev = "e421592" }
 error-chain = "*"
 
 [dependencies.rasen]
-version = "0.5.0"
+version = "0.6.0"
 git = "https://github.com/leops/rasen.git"
-rev = "68020c6"
+rev = "fbc1640"
+
+[dependencies.spirv-utils]
+version = "0.2.1"
+git = "https://github.com/leops/spirv-utils.git"
+rev = "b99f9b0"

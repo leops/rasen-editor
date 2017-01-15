@@ -1,14 +1,6 @@
 import {
-    remote,
     ipcRenderer,
 } from 'electron';
-import path from 'path';
-
-const ffi = remote.require('ffi');
-
-const rasen = ffi.Library(path.join(__dirname, '../native/target/release/rasen'), {
-    to_assembly: ['string', ['string']],
-});
 
 const serializeGraph = ({ editorState }) => JSON.stringify({
     nodes: editorState.nodes
@@ -24,16 +16,31 @@ const serializeGraph = ({ editorState }) => JSON.stringify({
         .toArray()
 });
 
-export function toAssembly(graph) {
-    const data = serializeGraph(graph);
+let rpcId = 0;
+const handlers = {};
 
-    // console.time('toAssembly');
-    const asm = rasen.to_assembly(data);
-    // console.timeEnd('toAssembly');
+ipcRenderer.on('build', (evt, id, result) => {
+    if (handlers[id]) {
+        handlers[id](result);
+        delete handlers[id];
+    }
+});
 
-    return JSON.parse(asm);
+export function build(graph) {
+    return new Promise((resolve, reject) => {
+        const id = rpcId++;
+        handlers[id] = result => {
+            if (result.error) {
+                reject(result.error);
+            } else {
+                resolve(result.payload);
+            }
+        };
+
+        ipcRenderer.send('build', id, serializeGraph(graph));
+    });
 }
 
-export function toBytecode(graph, file) {
-    ipcRenderer.send('to_bytecode', serializeGraph(graph), file);
+export function exportGraph(graph, file) {
+    ipcRenderer.send('export', serializeGraph(graph), file);
 }

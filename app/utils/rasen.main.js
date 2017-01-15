@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import {
+    exec,
+} from 'child_process';
+import {
     ipcMain,
 } from 'electron';
 import leftPad from 'left-pad';
@@ -13,24 +16,85 @@ const rasen = ffi.Library(path.join(__dirname, '../../native/target/release/rase
     to_assembly: ['string', ['string']],
 });
 
-ipcMain.on('to_bytecode', (evt, graph, file) => {
-    let data;
-    switch (path.extname(file)) {
-        case '.spv': {
-            // console.time('toBytecode');
-            const ptr = rasen.to_bytecode(graph);
-            // console.timeEnd('toBytecode');
+function toAssembly(graph) {
+    return Promise.resolve()
+        .then(() => rasen.to_assembly(graph));
+}
 
+function toBytecode(graph) {
+    return Promise.resolve()
+        .then(() => {
+            const ptr = rasen.to_bytecode(graph);
             const sizePtr = ref.reinterpret(ptr, 8);
             const size = sizePtr.readUIntLE(0, 8);
+            return ref.reinterpret(ptr, size, 8);
+        });
+}
 
-            data = ref.reinterpret(ptr, size, 8);
+let tempId = 0;
+function toGLSL(buffer) {
+    return new Promise((resolve, reject) => {
+        const file = path.resolve(process.env.TEMP, `__rasen_${tempId++}.spv`);
+        fs.writeFile(file, buffer, error => {
+            if (error) {
+                return reject(error);
+            }
+
+            exec('spirv-cross --version 100 --es ' + file, (error, stdout, stderr) => {
+                if (error) {
+                    return reject(error);
+                }
+
+                if (stderr.length > 0) {
+                    return reject(stderr);
+                }
+
+                resolve(stdout);
+                fs.unlink(file);
+            });
+        });
+    });
+}
+
+ipcMain.on('build', async ({ sender }, id, graph) => {
+    try {
+        const asm = JSON.parse(
+            await toAssembly(graph)
+        );
+        if (asm.error) {
+            throw asm.error;
         }
-        break;
+
+        const bin = await toBytecode(graph);
+
+        let glsl;
+        try {
+            glsl = await toGLSL(bin);
+        } catch (error) {
+            glsl = error;
+        }
+
+        sender.send('build', id, {
+            payload: {
+                asm, bin, glsl,
+            },
+        });
+    } catch (error) {
+        sender.send('build', id, { error });
+    }
+});
+
+ipcMain.on('export', async (evt, graph, file) => {
+    let data;
+    switch (path.extname(file)) {
+        case '.spv':
+            data = await toBytecode(graph);
+            break;
 
         case '.spvasm': {
-            const asm = rasen.to_assembly(graph);
-            const tree = JSON.parse(asm);
+            const tree = JSON.parse(
+                await toAssembly(graph)
+            );
 
             if (tree.error) {
                 console.error('error', tree.error);

@@ -16,6 +16,7 @@
         "comma-dangle": "off",
         "generator-star-spacing": "off",
         "no-use-before-define": "off",
+        "no-plusplus": "off",
 
         "flowtype-errors/show-errors": 2,
 
